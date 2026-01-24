@@ -1,12 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <title>Pastebin-Lite</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pastebin-Lite | Secure Storage</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono&display=swap"
+    rel="stylesheet">
   <style>
+    :root {
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --bg: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #22d3ee;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f7f6;
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      background-image: radial-gradient(circle at 50% -20%, #1e1b4b, var(--bg));
+      color: var(--text);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -15,35 +34,66 @@
     }
 
     .card {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      padding: 2.5rem;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       width: 100%;
-      max-width: 600px;
+      max-width: 650px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--primary-light);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     h1 {
-      color: #333;
-      margin-top: 0;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 0 0 1.5rem 0;
+      background: linear-gradient(to right, #fff, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     textarea {
       width: 100%;
-      height: 200px;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-family: monospace;
+      height: 220px;
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
       resize: vertical;
       box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 1.5rem;
+    }
+
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
     }
 
     .options {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin: 1rem 0;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
     }
 
     .option {
@@ -52,90 +102,149 @@
     }
 
     label {
-      font-size: 0.9rem;
-      color: #666;
-      margin-bottom: 4px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     input {
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: #fff;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--primary);
     }
 
     button {
-      background: #007bff;
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
       color: white;
       border: none;
-      padding: 12px;
-      border-radius: 6px;
+      padding: 14px;
+      border-radius: 12px;
       cursor: pointer;
-      font-size: 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
       width: 100%;
-      transition: background 0.2s;
+      transition: all 0.2s;
+      box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
     }
 
     button:hover {
-      background: #0056b3;
+      transform: translateY(-1px);
+      box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
+      filter: brightness(1.1);
+    }
+
+    button:active {
+      transform: translateY(0);
     }
 
     #result {
       margin-top: 1.5rem;
       padding: 1rem;
-      border-radius: 6px;
+      border-radius: 12px;
       display: none;
+      font-size: 0.95rem;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(10px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
 
     .success {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.2);
     }
 
     .error {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.2);
     }
 
-    a {
-      color: inherit;
-      font-weight: bold;
+    .success a {
+      color: #34d399;
+      text-decoration: underline;
+      font-weight: 700;
     }
   </style>
 </head>
 
 <body>
   <div class="card">
-    <h1>Pastebin-Lite</h1>
-    <textarea id="content" placeholder="Enter your text here..."></textarea>
+    <div class="badge">Auction Setup</div>
+    <h1>Launch Private Auction</h1>
 
-    <div class="options">
+    <div class="options" style="margin-bottom: 1.5rem;">
       <div class="option">
-        <label>TTL (seconds)</label>
-        <input type="number" id="ttl" placeholder="Optional">
+        <label>Product Title</label>
+        <input type="text" id="title" placeholder="e.g. Vintage Camera">
       </div>
       <div class="option">
-        <label>Max Views</label>
-        <input type="number" id="max_views" placeholder="Optional">
+        <label>Image URL</label>
+        <input type="text" id="image_url" placeholder="https://example.com/item.jpg">
       </div>
     </div>
 
-    <button onclick="createPaste()">Create Paste</button>
+    <label style="display: block; margin-bottom: 6px;">Product Description</label>
+    <textarea id="content" placeholder="Enter product details, condition, etc..."></textarea>
+
+    <div class="options" style="margin-bottom: 1.5rem;">
+      <div class="option">
+        <label>Starting Bid ($)</label>
+        <input type="number" id="starting_bid" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <div class="option">
+        <label>Auction Time (sec)</label>
+        <input type="number" id="ttl" placeholder="Optional (e.g. 3600)">
+      </div>
+    </div>
+
+    <button onclick="createPaste()">Create Private Auction</button>
 
     <div id="result"></div>
   </div>
 
   <script>
     async function createPaste() {
+      const title = document.getElementById('title').value;
+      const imageUrl = document.getElementById('image_url').value;
+      const startingBid = document.getElementById('starting_bid').value;
       const content = document.getElementById('content').value;
       const ttl = document.getElementById('ttl').value;
       const maxViews = document.getElementById('max_views').value;
       const resultDiv = document.getElementById('result');
+      const createBtn = document.querySelector('button');
+
+      if (!content.trim()) {
+        showResult('Description cannot be empty', 'error');
+        return;
+      }
 
       resultDiv.style.display = 'none';
+      createBtn.disabled = true;
+      createBtn.innerText = 'Initializing Auction...';
 
-      const body = { content };
+      const body = { content, title, image_url: imageUrl, starting_bid: parseFloat(startingBid) || 0 };
       if (ttl) body.ttl_seconds = parseInt(ttl);
       if (maxViews) body.max_views = parseInt(maxViews);
 
@@ -149,20 +258,31 @@
         const data = await response.json();
 
         if (response.ok) {
-          resultDiv.className = 'success';
-          resultDiv.innerHTML = `Paste created! Share link: <a href="${data.url}" target="_blank">${data.url}</a>`;
-          resultDiv.style.display = 'block';
+          const shareText = encodeURIComponent(`Check out my auction: ${title}\nBid here: ${data.url}`);
+          const whatsappUrl = `https://wa.me/?text=${shareText}`;
+
+          showResult(`
+            <div style="margin-bottom: 15px;">Auction Created! Direct Link: <a href="${data.url}" target="_blank">${data.url}</a></div>
+            <a href="${whatsappUrl}" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; background: #25D366; color: white; padding: 10px 20px; border-radius: 12px; text-decoration: none; font-weight: 600; width: 100%; box-sizing: border-box; transition: opacity 0.2s;">
+              Share via WhatsApp
+            </a>
+          `, 'success');
         } else {
-          resultDiv.className = 'error';
-          resultDiv.textContent = data.error || 'Something went wrong';
-          resultDiv.style.display = 'block';
+          showResult(data.error || 'Failed to create auction', 'error');
         }
       } catch (err) {
-        console.error('Paste creation failed:', err);
-        resultDiv.className = 'error';
-        resultDiv.textContent = 'Failed to connect to server: ' + err.message;
-        resultDiv.style.display = 'block';
+        showResult('Connection failed: ' + err.message, 'error');
+      } finally {
+        createBtn.disabled = false;
+        createBtn.innerText = 'Create Private Auction';
       }
+    }
+
+    function showResult(html, type) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.className = type;
+      resultDiv.innerHTML = html;
+      resultDiv.style.display = 'block';
     }
   </script>
 </body>

@@ -15,7 +15,7 @@ router.get('/healthz', async (req, res) => {
 
 // Create Paste
 router.post('/pastes', async (req, res) => {
-    const { content, ttl_seconds, max_views } = req.body;
+    const { content, ttl_seconds, max_views, title, image_url, starting_bid } = req.body;
 
     if (!content || typeof content !== 'string' || content.trim() === '') {
         return res.status(400).json({ error: 'content is required and must be a non-empty string' });
@@ -30,7 +30,7 @@ router.post('/pastes', async (req, res) => {
     }
 
     try {
-        const paste = await pasteService.createPaste(content, ttl_seconds, max_views, req.now);
+        const paste = await pasteService.createPaste(content, ttl_seconds, max_views, title, image_url, starting_bid, req.now);
         const protocol = req.headers['x-forwarded-proto'] || req.protocol;
         const host = req.headers['x-forwarded-host'] || req.get('host');
         const baseUrl = process.env.BASE_URL || `${protocol}://${host}`;
@@ -56,10 +56,31 @@ router.get('/pastes/:id', async (req, res) => {
 
         res.json({
             content: paste.content,
+            current_bid: paste.current_bid,
             remaining_views: paste.remaining_views,
             expires_at: paste.expires_at ? new Date(paste.expires_at).toISOString() : null
         });
     } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Place Bid API
+router.post('/pastes/:id/bids', async (req, res) => {
+    const { amount } = req.body;
+
+    if (amount === undefined || typeof amount !== 'number' || amount <= 0) {
+        return res.status(400).json({ error: 'amount is required and must be a positive number' });
+    }
+
+    try {
+        const result = await pasteService.placeBid(req.params.id, amount);
+        res.json(result);
+    } catch (err) {
+        if (err.message.includes('Bid must be higher')) {
+            return res.status(400).json({ error: err.message });
+        }
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });
     }
