@@ -4,3 +4,17 @@
 
 Server running on http://localhost:3000
 Connected to Redis
+Redis error: Error: read ECONNRESET
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+  errno: -54,
+  code: 'ECONNRESET',
+  syscall: 'read'
+}
+Connected to Redis
+Redis error: Error: read EADDRNOTAVAIL
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+  errno: -49,
+  code: 'EADDRNOTAVAIL',
+  syscall: 'read'
+}
+Connected to Redis

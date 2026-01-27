@@ -181,9 +181,15 @@ router.get('/:id', async (req, res) => {
 
       if (isMock) {
         errorHtml += `
-                    <div style="margin-top: 20px; padding: 15px; background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 8px; font-size: 0.9em; font-family: sans-serif;">
-                        <strong>Notice:</strong> Using transient database (Mock Redis). 
-                        Items are lost when the instance restarts. 
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 8px; font-size: 0.9em; font-family: sans-serif; text-align: left;">
+                        <strong>⚠️ Vercel/Render Storage Notice:</strong> 
+                        This app is currently using <em>Transient Storage</em>. Links work for a few minutes but are then deleted.
+                        <br><br>
+                        <strong>Fixed Connection Needed:</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                          <li>Set <code>REDIS_URL</code> in Vercel/Render Dashboard.</li>
+                          <li><a href="https://github.com/om-73/bidup/blob/main/REDIS_SETUP.md" target="_blank" style="color: #ffc107; font-weight: bold;">Step-by-Step Redis Guide</a></li>
+                        </ul>
                     </div>
                 `;
       }

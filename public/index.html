@@ -192,6 +192,7 @@
 <body>
   <div class="card">
     <div class="badge">Auction Setup</div>
+    <div id="storage-status" style="margin-bottom: 20px;"></div>
     <h1>Launch Private Auction</h1>
 
     <div class="options" style="margin-bottom: 1.5rem;">
@@ -210,8 +211,8 @@
 
     <div class="options" style="margin-bottom: 1.5rem;">
       <div class="option">
-        <label>Starting Bid ($)</label>
-        <input type="number" id="starting_bid" placeholder="0.00" min="0" step="0.01">
+        <label>Starting Bid (₹)</label>
+        <input type="number" id="starting_bid" placeholder="0.00" min="0" step="1">
       </div>
       <div class="option">
         <label>Auction Time (sec)</label>
@@ -292,6 +293,22 @@
       resultDiv.innerHTML = html;
       resultDiv.style.display = 'block';
     }
+    async function checkHealth() {
+      try {
+        const res = await fetch('/api/healthz');
+        const data = await res.json();
+        const statusDiv = document.getElementById('storage-status');
+        if (data.ok && data.persistent) {
+          statusDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 8px; color: #10b981; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;"><div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></div> Persistent Storage (Redis) Connected</div>';
+        } else {
+          statusDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 8px; color: #ffc107; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;"><div style="width: 8px; height: 8px; background: #ffc107; border-radius: 50%;"></div> Transient Storage (Links will be lost)</div>';
+        }
+      } catch (e) {
+        console.error('Health check failed');
+      }
+    }
+
+    checkHealth();
   </script>
 </body>
 

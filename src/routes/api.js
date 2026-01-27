@@ -7,7 +7,10 @@ const pasteService = require('../services/pasteService');
 router.get('/healthz', async (req, res) => {
     try {
         const status = await redis.ping();
-        res.json({ ok: status === 'PONG' });
+        res.json({
+            ok: status === 'PONG',
+            persistent: redis.isPersistent === true
+        });
     } catch (err) {
         res.status(500).json({ ok: false, error: 'Redis connection failed' });
     }

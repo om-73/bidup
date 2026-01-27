@@ -9,21 +9,29 @@ let redis;
 
 if (useMock) {
     console.log('Using ioredis-mock for persistence (Data will be ephemeral)');
-    if (process.env.NODE_ENV === 'production') {
-        console.warn('WARNING: REDIS_URL not provided. Using in-memory mock. Data will be lost on restart.');
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+        console.warn('CRITICAL: REDIS_URL not provided. Vercel/Render will DELETE your data on every request.');
+        console.warn('FOLLOW THIS GUIDE: https://github.com/om-73/bidup/blob/main/REDIS_SETUP.md');
     }
     redis = new MockRedis();
 } else {
-    redis = new Redis(redisUrl, {
+    const config = {
         maxRetriesPerRequest: 1,
         retryStrategy: (times) => {
-            if (times > 3) {
-                console.warn('Redis connection failed 3 times. Falling back to mock for this session.');
-                return null; // Stop retrying
+            if (times > 10) {
+                console.warn('Redis connection failed 10 times. Falling back to mock for this session.');
+                return null;
             }
-            return Math.min(times * 100, 2000);
+            return Math.min(times * 200, 5000);
         }
-    });
+    };
+
+    // Upstash and many cloud providers require TLS for rediss:// URLs
+    if (redisUrl.startsWith('rediss://')) {
+        config.tls = { rejectUnauthorized: false };
+    }
+
+    redis = new Redis(redisUrl, config);
 
     redis.on('error', (err) => {
         if (err.code !== 'ECONNREFUSED') {
@@ -36,4 +44,5 @@ if (useMock) {
     });
 }
 
+redis.isPersistent = !useMock;
 module.exports = redis;
