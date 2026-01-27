@@ -23,7 +23,7 @@ router.get('/monitor/:id', async (req, res) => {
     const productTitle = paste.title || 'Exclusive Auction Item';
     const bidHistoryRows = paste.bid_history.map(bid => `
         <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <span style="color: #fff;">$${bid.amount.toFixed(2)}</span>
+            <span style="color: #fff;">₹${bid.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             <span style="color: #94a3b8; font-size: 0.8rem;">${new Date(bid.timestamp).toLocaleString()}</span>
         </div>
     `).join('');
@@ -137,11 +137,11 @@ router.get('/monitor/:id', async (req, res) => {
                         </div>
                         <div class="stat-box">
                             <div class="stat-label">Starting Bid</div>
-                            <div class="stat-value">$${paste.starting_bid}</div>
+                            <div class="stat-value">₹${paste.starting_bid.toLocaleString('en-IN')}</div>
                         </div>
                          <div class="stat-box">
                             <div class="stat-label">Current Highest</div>
-                            <div class="stat-value" style="color: var(--success);">$${paste.current_bid || 0}</div>
+                            <div class="stat-value" style="color: var(--success);">₹${(paste.current_bid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         </div>
                     </div>
                 </div>
@@ -474,12 +474,12 @@ router.get('/:id', async (req, res) => {
           <div class="card auction-info">
             <div class="stat-box" id="bid-display-box">
               <div class="stat-label" id="bid-label">${paste.current_bid !== null ? 'Current Highest Bid' : 'Starting Bid'}</div>
-              <div class="stat-value" id="current-bid-value">$${(paste.current_bid !== null ? paste.current_bid : (paste.starting_bid || 0)).toFixed(2)}</div>
+              <div class="stat-value" id="current-bid-value">₹${(paste.current_bid !== null ? paste.current_bid : (paste.starting_bid || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
 
             <div class="stat-box">
               <div class="stat-label">Min. Increment</div>
-              <div class="stat-value">$1.00</div>
+              <div class="stat-value">₹1.00</div>
             </div>
 
             <div class="stat-box">
@@ -490,7 +490,7 @@ router.get('/:id', async (req, res) => {
             <div class="bid-section">
               <div class="stat-label">Submit New Bid</div>
               <div class="bid-input-group">
-                <input type="number" id="bid-amount" placeholder="USD" min="${(paste.current_bid !== null ? paste.current_bid : (paste.starting_bid || 0)) + 1}">
+                <input type="number" id="bid-amount" placeholder="INR" min="${(paste.current_bid !== null ? paste.current_bid : (paste.starting_bid || 0)) + 1}">
                 <button id="bid-button" onclick="submitBid()">Bid</button>
               </div>
               <div id="bid-status"></div>
@@ -554,7 +554,7 @@ router.get('/:id', async (req, res) => {
 
               if (response.ok) {
                 showStatus('Bid placed successfully!', 'success');
-                bidValueDisplay.innerText = '$' + data.new_bid.toFixed(2);
+                bidValueDisplay.innerText = '₹' + data.new_bid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 bidBox.classList.add('updated');
                 setTimeout(() => bidBox.classList.remove('updated'), 1000);
                 bidInput.value = '';

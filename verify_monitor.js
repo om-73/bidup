@@ -24,7 +24,7 @@ async function testMonitoring() {
         if (monitorRes.status === 200 && monitorRes.data.includes('Owner Dashboard')) {
             console.log('   SUCCESS: Monitoring page loaded.');
 
-            if (monitorRes.data.includes('$60.00')) {
+            if (monitorRes.data.includes('₹60.00')) {
                 console.log('   SUCCESS: Bid history displayed.');
             } else {
                 console.error('   FAIL: Bid history not found.');

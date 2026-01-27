@@ -2,5 +2,5 @@
 > pastman@1.0.0 start
 > node src/index.js
 
-Using ioredis-mock for persistence (Data will be ephemeral)
 Server running on http://localhost:3000
+Connected to Redis
