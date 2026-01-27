@@ -9,6 +9,7 @@ if (require.main === module) {
     });
 }
 
-// Export for Vercel
+// Export for Vercel - both as default and as handler function
 module.exports = app;
+module.exports.default = app;
 

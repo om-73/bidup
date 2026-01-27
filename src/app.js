@@ -25,10 +25,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
 
-
-
-// Error handling
-// Error handling
+// 404 handler - only after all routes
 app.use((req, res, next) => {
     res.status(404).json({ error: 'Not Found' });
 });
