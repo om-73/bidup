@@ -2,6 +2,175 @@ const express = require('express');
 const router = express.Router();
 const pasteService = require('../services/pasteService');
 
+router.get('/monitor/:id', async (req, res) => {
+  try {
+    const paste = await pasteService.getMonitoringData(req.params.id);
+
+    if (!paste) {
+      return res.status(404).send('404 - Item Not Found');
+    }
+
+    const escapeHTML = (str) => {
+      return str ? str.replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[m]) : '';
+    };
+
+    const productTitle = paste.title || 'Exclusive Auction Item';
+    const bidHistoryRows = paste.bid_history.map(bid => `
+        <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <span style="color: #fff;">$${bid.amount.toFixed(2)}</span>
+            <span style="color: #94a3b8; font-size: 0.8rem;">${new Date(bid.timestamp).toLocaleString()}</span>
+        </div>
+    `).join('');
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Monitor: ${escapeHTML(productTitle)}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+        <style>
+          :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent: #f43f5e; 
+          }
+
+          body { 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg);
+            color: var(--text); 
+            line-height: 1.6; 
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+          }
+
+          .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+          }
+
+          @media (max-width: 800px) {
+            .container { grid-template-columns: 1fr; }
+          }
+
+          .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+          }
+
+          h1 { margin-top: 0; font-size: 1.5rem; }
+          h2 { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+          .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+          }
+
+          .stat-box {
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 8px;
+          }
+
+          .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+          .stat-value { font-size: 1.25rem; font-weight: 700; color: #fff; }
+
+          .bid-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+          }
+
+          .header-badge {
+            background: var(--accent);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 12px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+            <div class="column">
+                <div class="card">
+                    <div class="header-badge">Owner Dashboard</div>
+                    <h1>${escapeHTML(productTitle)}</h1>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">
+                        ID: ${req.params.id}
+                    </div>
+                    
+                    <h2>Lifecycle Stats</h2>
+                    <div class="stat-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Total Views</div>
+                            <div class="stat-value">${paste.current_views} <span style="font-size: 0.8rem; color: var(--text-muted);">/ ${paste.max_views || '∞'}</span></div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Expires At</div>
+                            <div class="stat-value" style="font-size: 0.9rem;">${paste.expires_at ? new Date(paste.expires_at).toLocaleString() : 'Never'}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Starting Bid</div>
+                            <div class="stat-value">$${paste.starting_bid}</div>
+                        </div>
+                         <div class="stat-box">
+                            <div class="stat-label">Current Highest</div>
+                            <div class="stat-value" style="color: var(--success);">$${paste.current_bid || 0}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="card">
+                    <h2>Bid History (${paste.bid_history.length})</h2>
+                    <div class="bid-list">
+                        ${bidHistoryRows.length > 0 ? bidHistoryRows : '<div style="padding: 12px; color: var(--text-muted); text-align: center;">No bids yet</div>'}
+                    </div>
+                </div>
+
+                <div class="card">
+                     <a href="/" style="color: var(--primary-light); text-decoration: none;">&larr; Back to Home</a> | 
+                     <a href="/p/${req.params.id}" target="_blank" style="color: var(--primary-light); text-decoration: none;">View Public Page &nearr;</a>
+                </div>
+            </div>
+        </div>
+      </body>
+      </html>
+    `);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const paste = await pasteService.getPaste(req.params.id, req.now);

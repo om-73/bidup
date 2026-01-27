@@ -219,6 +219,13 @@
       </div>
     </div>
 
+    <div class="options" style="margin-bottom: 1.5rem;">
+      <div class="option">
+        <label>Max Views (Traffic Limit)</label>
+        <input type="number" id="max_views" placeholder="0 = Unlimited">
+      </div>
+    </div>
+
     <button onclick="createPaste()">Create Private Auction</button>
 
     <div id="result"></div>
@@ -231,7 +238,8 @@
       const startingBid = document.getElementById('starting_bid').value;
       const content = document.getElementById('content').value;
       const ttl = document.getElementById('ttl').value;
-      const maxViews = document.getElementById('max_views').value;
+      const maxViewsEl = document.getElementById('max_views');
+      const maxViews = maxViewsEl ? maxViewsEl.value : null;
       const resultDiv = document.getElementById('result');
       const createBtn = document.querySelector('button');
 

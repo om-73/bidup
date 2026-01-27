@@ -82,6 +82,36 @@ class PasteService {
 
         return { success: true, new_bid: amount };
     }
+
+    async getMonitoringData(id) {
+        const dataStr = await redis.get(`paste:${id}:data`);
+        if (!dataStr) return null;
+
+        const data = JSON.parse(dataStr);
+        const currentViews = await redis.get(`paste:${id}:views`);
+        const currentBid = await redis.get(`paste:${id}:current_bid`);
+
+        // optimize: get last 50 bids
+        const bidHistoryRaw = await redis.zrange(`paste:${id}:bid_history`, 0, -1, 'WITHSCORES');
+
+        const bidHistory = [];
+        for (let i = 0; i < bidHistoryRaw.length; i += 2) {
+            bidHistory.push({
+                amount: parseFloat(bidHistoryRaw[i]),
+                timestamp: parseInt(bidHistoryRaw[i + 1])
+            });
+        }
+
+        // Reverse to show newest first
+        bidHistory.reverse();
+
+        return {
+            ...data,
+            current_views: currentViews ? parseInt(currentViews) : 0,
+            current_bid: currentBid ? parseFloat(currentBid) : null,
+            bid_history: bidHistory
+        };
+    }
 }
 
 module.exports = new PasteService();
