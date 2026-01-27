@@ -52,12 +52,25 @@ class PasteService {
             return null;
         }
 
-        // Get Latest Bid
+        // Get Latest Bid and History
         const currentBid = await redis.get(`paste:${id}:current_bid`);
+
+        // Fetch last 10 bids
+        const bidHistoryRaw = await redis.zrange(`paste:${id}:bid_history`, 0, -1, 'WITHSCORES');
+        const bidHistory = [];
+        for (let i = 0; i < bidHistoryRaw.length; i += 2) {
+            bidHistory.push({
+                amount: parseFloat(bidHistoryRaw[i]),
+                timestamp: parseInt(bidHistoryRaw[i + 1])
+            });
+        }
+        bidHistory.reverse();
+        const recentBids = bidHistory.slice(0, 10);
 
         return {
             ...data,
             current_bid: currentBid ? parseFloat(currentBid) : null,
+            bid_history: recentBids,
             remaining_views: data.max_views ? Math.max(0, data.max_views - currentViews) : null
         };
     }

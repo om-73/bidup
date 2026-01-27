@@ -197,7 +197,7 @@ router.get('/:id', async (req, res) => {
         <body style="background: #0f172a; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;">
           <div style="text-align: center; border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 24px; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px);">
             ${errorHtml}
-            <a href="/" style="color: #818cf8; text-decoration: none; font-weight: 600; font-family: sans-serif; display: block; margin-top: 20px;">&larr; Back to Dashboard</a>
+            <a href="/" style="display: none;"></a>
           </div>
         </body>
       `);
@@ -223,6 +223,12 @@ router.get('/:id', async (req, res) => {
     const productTitle = paste.title || 'Exclusive Auction Item';
     const productImage = paste.image_url ? `<img src="${paste.image_url}" alt="${escapeHTML(productTitle)}" style="width: 100%; border-radius: 16px; margin-bottom: 24px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">` : '';
 
+    const bidHistoryItems = (paste.bid_history || []).map(bid => `
+      <div class="bid-history-item">
+        <span style="color: #fff;">₹${bid.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <span style="color: var(--text-muted); font-size: 0.7rem;">${new Date(bid.timestamp).toLocaleTimeString()}</span>
+      </div>
+    `).join('');
     res.send(`
       <!DOCTYPE html>
       <html lang="en">
@@ -453,6 +459,47 @@ router.get('/:id', async (req, res) => {
             margin-top: 8px;
             min-height: 1.2em;
           }
+
+          .bid-history-container {
+            margin-top: 24px;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+          }
+
+          .bid-history-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+          }
+
+          .bid-history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+          }
+
+          .bid-history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            border: 1px solid transparent;
+            animation: slideIn 0.3s ease-out;
+          }
+
+          @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+          }
         </style>
       </head>
       <body>
@@ -502,11 +549,17 @@ router.get('/:id', async (req, res) => {
               <div id="bid-status"></div>
             </div>
 
-            <div style="margin-top: auto; padding-top: 20px;">
-              <a href="/" class="back-link">
-                &larr; Return to Dashboard
-              </a>
+            <div class="bid-history-container">
+              <div class="bid-history-title">
+                Recent Bids
+                <span style="font-size: 0.6rem; opacity: 0.6;">LAST 10</span>
+              </div>
+              <div class="bid-history-list" id="bid-history-list">
+                ${bidHistoryItems.length > 0 ? bidHistoryItems : '<div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 10px;">No bids yet</div>'}
+              </div>
             </div>
+
+            <!-- Return to Dashboard Removed -->
           </div>
         </div>
 
@@ -563,6 +616,20 @@ router.get('/:id', async (req, res) => {
                 bidValueDisplay.innerText = '₹' + data.new_bid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 bidBox.classList.add('updated');
                 setTimeout(() => bidBox.classList.remove('updated'), 1000);
+                
+                // Add to history list
+                const historyList = document.getElementById('bid-history-list');
+                const noBidsMsg = historyList.querySelector('div[style*="text-align: center"]');
+                if (noBidsMsg) noBidsMsg.remove();
+                
+                const newItem = document.createElement('div');
+                newItem.className = 'bid-history-item';
+                newItem.innerHTML = '<span style="color: #fff;">₹' + data.new_bid.toLocaleString(\'en-IN\', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span><span style="color: var(--text-muted); font-size: 0.7rem;">' + new Date().toLocaleTimeString() + '</span>';
+                historyList.prepend(newItem);
+                if (historyList.children.length > 10) {
+                  historyList.lastElementChild.remove();
+                }
+
                 bidInput.value = '';
                 bidInput.min = data.new_bid + 1;
               } else {
