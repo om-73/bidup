@@ -6,15 +6,15 @@
             "use": "@vercel/node",
             "config": {
                 "includeFiles": [
-                    "public/**"
-                ]
+                    "public/**",
+                    "src/**",
+                    "package.json"
+                ],
+                "zeroConfig": true
             }
         }
     ],
     "routes": [
-        {
-            "handle": "filesystem"
-        },
         {
             "src": "/api/(.*)",
             "dest": "src/index.js"
