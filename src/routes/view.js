@@ -158,11 +158,6 @@ router.get('/monitor/:id', async (req, res) => {
                         ${bidHistoryRows.length > 0 ? bidHistoryRows : '<div style="padding: 12px; color: var(--text-muted); text-align: center;">No bids yet</div>'}
                     </div>
                 </div>
-
-                <div class="card">
-                     <a href="/" style="color: var(--primary-light); text-decoration: none;">&larr; Back to Home</a> | 
-                     <a href="/p/${req.params.id}" target="_blank" style="color: var(--primary-light); text-decoration: none;">View Public Page &nearr;</a>
-                </div>
             </div>
         </div>
         <script>
@@ -575,6 +570,7 @@ router.get('/:id', async (req, res) => {
             <div class="stat-box" id="bid-display-box">
               <div class="stat-label" id="bid-label">${paste.current_bid !== null ? 'Current Highest Bid' : 'Starting Bid'}</div>
               <div class="stat-value" id="current-bid-value">₹${(paste.current_bid !== null ? paste.current_bid : (paste.starting_bid || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              ${paste.current_bid !== null ? `<div id="highest-bidder-name" style="font-size: 0.8rem; color: var(--accent); margin-top: 4px; font-weight: 600;">Leading: ${escapeHTML(paste.bid_history[0].bidderName || 'Anonymous')}</div>` : '<div id="highest-bidder-name" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">No leading bidder yet</div>'}
             </div>
 
             <div class="stat-box">
@@ -619,6 +615,7 @@ router.get('/:id', async (req, res) => {
           const bidInput = document.getElementById('bid-amount');
           const bidStatus = document.getElementById('bid-status');
           const bidValueDisplay = document.getElementById('current-bid-value');
+          const highestBidderEl = document.getElementById('highest-bidder-name');
           const bidBox = document.getElementById('bid-display-box');
           const bidButton = document.getElementById('bid-button');
           const nameInput = document.getElementById('bidder-name');
@@ -677,6 +674,12 @@ router.get('/:id', async (req, res) => {
                 lastKnownBid = data.current_bid;
                 bidValueDisplay.innerText = formatRupee(data.current_bid);
                 bidInput.min = data.current_bid + 1;
+                
+                if (highestBidderEl && data.bid_history && data.bid_history[0]) {
+                  highestBidderEl.innerText = 'Leading: ' + (data.bid_history[0].bidderName || 'Anonymous');
+                  highestBidderEl.style.color = 'var(--accent)';
+                }
+
                 renderBidHistory(data.bid_history);
                 
                 bidBox.classList.add('updated');
@@ -716,6 +719,11 @@ router.get('/:id', async (req, res) => {
                 bidValueDisplay.innerText = formatRupee(data.new_bid);
                 bidInput.min = data.new_bid + 1;
                 bidInput.value = '';
+
+                if (highestBidderEl) {
+                   highestBidderEl.innerText = 'Leading: ' + bidderName;
+                   highestBidderEl.style.color = 'var(--accent)';
+                }
                 
                 // Fetch latest history immediately
                 pollForUpdates();
