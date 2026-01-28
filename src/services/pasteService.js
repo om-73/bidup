@@ -59,9 +59,26 @@ class PasteService {
         const bidHistoryRaw = await redis.zrange(`paste:${id}:bid_history`, 0, -1, 'WITHSCORES');
         const bidHistory = [];
         for (let i = 0; i < bidHistoryRaw.length; i += 2) {
+            const member = bidHistoryRaw[i];
+            const timestamp = parseInt(bidHistoryRaw[i + 1]);
+            let amount = member;
+            let bidderName = 'Anonymous';
+
+            try {
+                const parsed = JSON.parse(member);
+                if (typeof parsed === 'object' && parsed.amount !== undefined) {
+                    amount = parsed.amount;
+                    bidderName = parsed.bidderName || 'Anonymous';
+                }
+            } catch (e) {
+                // Not JSON, assume old numeric format
+                amount = parseFloat(member);
+            }
+
             bidHistory.push({
-                amount: parseFloat(bidHistoryRaw[i]),
-                timestamp: parseInt(bidHistoryRaw[i + 1])
+                amount: typeof amount === 'number' ? amount : parseFloat(amount),
+                bidderName,
+                timestamp
             });
         }
         bidHistory.reverse();
@@ -75,7 +92,7 @@ class PasteService {
         };
     }
 
-    async placeBid(id, amount) {
+    async placeBid(id, amount, bidderName = 'Anonymous') {
         const dataStr = await redis.get(`paste:${id}:data`);
         if (!dataStr) throw new Error('Auction not found');
         const data = JSON.parse(dataStr);
@@ -91,7 +108,8 @@ class PasteService {
         }
 
         await redis.set(`paste:${id}:current_bid`, amount);
-        await redis.zadd(`paste:${id}:bid_history`, Date.now(), amount);
+        const bidEntry = JSON.stringify({ amount, bidderName: bidderName || 'Anonymous' });
+        await redis.zadd(`paste:${id}:bid_history`, Date.now(), bidEntry);
 
         return { success: true, new_bid: amount };
     }
@@ -109,9 +127,25 @@ class PasteService {
 
         const bidHistory = [];
         for (let i = 0; i < bidHistoryRaw.length; i += 2) {
+            const member = bidHistoryRaw[i];
+            const timestamp = parseInt(bidHistoryRaw[i + 1]);
+            let amount = member;
+            let bidderName = 'Anonymous';
+
+            try {
+                const parsed = JSON.parse(member);
+                if (typeof parsed === 'object' && parsed.amount !== undefined) {
+                    amount = parsed.amount;
+                    bidderName = parsed.bidderName || 'Anonymous';
+                }
+            } catch (e) {
+                amount = parseFloat(member);
+            }
+
             bidHistory.push({
-                amount: parseFloat(bidHistoryRaw[i]),
-                timestamp: parseInt(bidHistoryRaw[i + 1])
+                amount: typeof amount === 'number' ? amount : parseFloat(amount),
+                bidderName,
+                timestamp
             });
         }
 

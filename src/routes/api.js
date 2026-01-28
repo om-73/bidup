@@ -40,7 +40,8 @@ router.post('/pastes', async (req, res) => {
 
         res.status(201).json({
             id: paste.id,
-            url: `${baseUrl}/p/${paste.id}`
+            url: `${baseUrl}/p/${paste.id}`,
+            monitor_url: `${baseUrl}/p/monitor/${paste.id}`
         });
     } catch (err) {
         console.error(err);
@@ -60,6 +61,7 @@ router.get('/pastes/:id', async (req, res) => {
         res.json({
             content: paste.content,
             current_bid: paste.current_bid,
+            bid_history: paste.bid_history,
             remaining_views: paste.remaining_views,
             expires_at: paste.expires_at ? new Date(paste.expires_at).toISOString() : null
         });
@@ -71,19 +73,39 @@ router.get('/pastes/:id', async (req, res) => {
 
 // Place Bid API
 router.post('/pastes/:id/bids', async (req, res) => {
-    const { amount } = req.body;
+    const { amount, bidderName } = req.body;
 
     if (amount === undefined || typeof amount !== 'number' || amount <= 0) {
         return res.status(400).json({ error: 'amount is required and must be a positive number' });
     }
 
     try {
-        const result = await pasteService.placeBid(req.params.id, amount);
+        const result = await pasteService.placeBid(req.params.id, amount, bidderName);
         res.json(result);
     } catch (err) {
         if (err.message.includes('Bid must be higher')) {
             return res.status(400).json({ error: err.message });
         }
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Monitoring API (does not increment views)
+router.get('/pastes/:id/monitor', async (req, res) => {
+    try {
+        const paste = await pasteService.getMonitoringData(req.params.id);
+
+        if (!paste) {
+            return res.status(404).json({ error: 'Paste not found' });
+        }
+
+        res.json({
+            current_views: paste.current_views,
+            current_bid: paste.current_bid,
+            bid_history: paste.bid_history
+        });
+    } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });
     }

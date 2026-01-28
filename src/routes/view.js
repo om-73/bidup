@@ -23,7 +23,10 @@ router.get('/monitor/:id', async (req, res) => {
     const productTitle = paste.title || 'Exclusive Auction Item';
     const bidHistoryRows = paste.bid_history.map(bid => `
         <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <span style="color: #fff;">₹${bid.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <div style="display: flex; flex-direction: column;">
+                <span style="color: #fff; font-weight: 600;">₹${bid.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span style="color: var(--primary-light); font-size: 0.7rem;">${escapeHTML(bid.bidderName || 'Anonymous')}</span>
+            </div>
             <span style="color: #94a3b8; font-size: 0.8rem;">${new Date(bid.timestamp).toLocaleString()}</span>
         </div>
     `).join('');
@@ -45,6 +48,7 @@ router.get('/monitor/:id', async (req, res) => {
             --text: #f1f5f9;
             --text-muted: #94a3b8;
             --accent: #f43f5e; 
+            --success: #10b981;
           }
 
           body { 
@@ -129,7 +133,7 @@ router.get('/monitor/:id', async (req, res) => {
                     <div class="stat-grid">
                         <div class="stat-box">
                             <div class="stat-label">Total Views</div>
-                            <div class="stat-value">${paste.current_views} <span style="font-size: 0.8rem; color: var(--text-muted);">/ ${paste.max_views || '∞'}</span></div>
+                            <div class="stat-value" id="current-views-val">${paste.current_views} <span style="font-size: 0.8rem; color: var(--text-muted);">/ ${paste.max_views || '∞'}</span></div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-label">Expires At</div>
@@ -141,7 +145,7 @@ router.get('/monitor/:id', async (req, res) => {
                         </div>
                          <div class="stat-box">
                             <div class="stat-label">Current Highest</div>
-                            <div class="stat-value" style="color: var(--success);">₹${(paste.current_bid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div class="stat-value" id="current-bid-val" style="color: var(--success);">₹${(paste.current_bid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         </div>
                     </div>
                 </div>
@@ -149,8 +153,8 @@ router.get('/monitor/:id', async (req, res) => {
 
             <div class="column">
                 <div class="card">
-                    <h2>Bid History (${paste.bid_history.length})</h2>
-                    <div class="bid-list">
+                    <h2 id="history-title">Bid History (${paste.bid_history.length})</h2>
+                    <div class="bid-list" id="bid-history-list">
                         ${bidHistoryRows.length > 0 ? bidHistoryRows : '<div style="padding: 12px; color: var(--text-muted); text-align: center;">No bids yet</div>'}
                     </div>
                 </div>
@@ -161,6 +165,46 @@ router.get('/monitor/:id', async (req, res) => {
                 </div>
             </div>
         </div>
+        <script>
+          const pasteId = '${req.params.id}';
+          const bidValEl = document.getElementById('current-bid-val');
+          const viewsValEl = document.getElementById('current-views-val');
+          const historyListEl = document.getElementById('bid-history-list');
+          const historyTitleEl = document.getElementById('history-title');
+
+          async function poll() {
+            try {
+              const res = await fetch('/api/pastes/' + pasteId + '/monitor');
+              if (!res.ok) return;
+              const data = await res.json();
+              
+              if (bidValEl) {
+                bidValEl.innerText = '₹' + (data.current_bid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              }
+              if (viewsValEl) {
+                const maxViews = ${paste.max_views ? "'" + paste.max_views + "'" : "'∞'"};
+                viewsValEl.innerHTML = (data.current_views) + ' <span style="font-size: 0.8rem; color: var(--text-muted);">/ ' + maxViews + '</span>';
+              }
+              
+              if (historyListEl && data.bid_history) {
+                historyTitleEl.innerText = 'Bid History (' + data.bid_history.length + ')';
+                historyListEl.innerHTML = data.bid_history.map(bid => \`
+                    <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="color: #fff; font-weight: 600;">₹\${bid.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span style="color: var(--primary-light); font-size: 0.7rem;">\${bid.bidderName || 'Anonymous'}</span>
+                        </div>
+                        <span style="color: #94a3b8; font-size: 0.8rem;">\${new Date(bid.timestamp).toLocaleString()}</span>
+                    </div>
+                \`).join('');
+                if (data.bid_history.length === 0) {
+                   historyListEl.innerHTML = '<div style="padding: 12px; color: var(--text-muted); text-align: center;">No bids yet</div>';
+                }
+              }
+            } catch (e) {}
+          }
+          setInterval(poll, 3000);
+        </script>
       </body>
       </html>
     `);
@@ -225,7 +269,10 @@ router.get('/:id', async (req, res) => {
 
     const bidHistoryItems = (paste.bid_history || []).map(bid => `
       <div class="bid-history-item">
-        <span style="color: #fff;">₹${bid.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <div style="display: flex; flex-direction: column;">
+          <span style="color: #fff; font-weight: 600;">₹${bid.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span style="color: var(--text-muted); font-size: 0.7rem;">${escapeHTML(bid.bidderName || 'Anonymous')}</span>
+        </div>
         <span style="color: var(--text-muted); font-size: 0.7rem;">${new Date(bid.timestamp).toLocaleTimeString()}</span>
       </div>
     `).join('');
@@ -542,8 +589,11 @@ router.get('/:id', async (req, res) => {
 
             <div class="bid-section">
               <div class="stat-label">Submit New Bid</div>
+              <div style="margin-top: 12px;">
+                <input type="text" id="bidder-name" placeholder="Your Name" style="width: 100%; box-sizing: border-box; background: #020617; border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; color: #fff; font-family: inherit; font-size: 0.9rem; outline: none; margin-bottom: 12px;">
+              </div>
               <div class="bid-input-group">
-                <input type="number" id="bid-amount" placeholder="INR" min="${(paste.current_bid !== null ? paste.current_bid : (paste.starting_bid || 0)) + 1}">
+                <input type="number" id="bid-amount" placeholder="Amount (INR)" min="${(paste.current_bid !== null ? paste.current_bid : (paste.starting_bid || 0)) + 1}">
                 <button id="bid-button" onclick="submitBid()">Bid</button>
               </div>
               <div id="bid-status"></div>
@@ -571,6 +621,31 @@ router.get('/:id', async (req, res) => {
           const bidValueDisplay = document.getElementById('current-bid-value');
           const bidBox = document.getElementById('bid-display-box');
           const bidButton = document.getElementById('bid-button');
+          const nameInput = document.getElementById('bidder-name');
+          const historyList = document.getElementById('bid-history-list');
+
+          let lastKnownBid = ${paste.current_bid || paste.starting_bid || 0};
+
+          function formatRupee(amount) {
+            return '₹' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          }
+
+          function renderBidHistory(bids) {
+            if (!bids || bids.length === 0) {
+              historyList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 10px;">No bids yet</div>';
+              return;
+            }
+            
+            historyList.innerHTML = bids.map(function(bid) {
+              return '<div class="bid-history-item">' +
+                '<div style="display: flex; flex-direction: column;">' +
+                  '<span style="color: #fff; font-weight: 600;">₹' + bid.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span>' +
+                  '<span style="color: var(--text-muted); font-size: 0.7rem;">' + (bid.bidderName || 'Anonymous') + '</span>' +
+                '</div>' +
+                '<span style="color: var(--text-muted); font-size: 0.7rem;">' + new Date(bid.timestamp).toLocaleTimeString() + '</span>' +
+                '</div>';
+            }).join('');
+          }
 
           if (countdownEl && countdownEl.dataset.time) {
             const target = parseInt(countdownEl.dataset.time);
@@ -592,8 +667,32 @@ router.get('/:id', async (req, res) => {
             updateTimer();
           }
 
+          async function pollForUpdates() {
+            try {
+              const response = await fetch('/api/pastes/' + pasteId);
+              if (!response.ok) return;
+              const data = await response.json();
+              
+              if (data.current_bid > lastKnownBid) {
+                lastKnownBid = data.current_bid;
+                bidValueDisplay.innerText = formatRupee(data.current_bid);
+                bidInput.min = data.current_bid + 1;
+                renderBidHistory(data.bid_history);
+                
+                bidBox.classList.add('updated');
+                setTimeout(() => bidBox.classList.remove('updated'), 1000);
+              }
+            } catch (err) {
+              // Fail silently in production
+            }
+          }
+
+          // Start polling every 5 seconds
+          setInterval(pollForUpdates, 5000);
+
           async function submitBid() {
             const amount = parseFloat(bidInput.value);
+            const bidderName = nameInput.value.trim() || 'Anonymous';
             if (!amount || amount <= 0) {
               showStatus('Enter a valid amount', 'error');
               return;
@@ -606,32 +705,20 @@ router.get('/:id', async (req, res) => {
               const response = await fetch('/api/pastes/' + pasteId + '/bids', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount })
+                body: JSON.stringify({ amount, bidderName })
               });
 
               const data = await response.json();
 
               if (response.ok) {
                 showStatus('Bid placed successfully!', 'success');
-                bidValueDisplay.innerText = '₹' + data.new_bid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                bidBox.classList.add('updated');
-                setTimeout(() => bidBox.classList.remove('updated'), 1000);
-                
-                // Add to history list
-                const historyList = document.getElementById('bid-history-list');
-                const noBidsMsg = historyList.querySelector('div[style*="text-align: center"]');
-                if (noBidsMsg) noBidsMsg.remove();
-                
-                const newItem = document.createElement('div');
-                newItem.className = 'bid-history-item';
-                newItem.innerHTML = '<span style="color: #fff;">₹' + data.new_bid.toLocaleString(\'en-IN\', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span><span style="color: var(--text-muted); font-size: 0.7rem;">' + new Date().toLocaleTimeString() + '</span>';
-                historyList.prepend(newItem);
-                if (historyList.children.length > 10) {
-                  historyList.lastElementChild.remove();
-                }
-
-                bidInput.value = '';
+                lastKnownBid = data.new_bid;
+                bidValueDisplay.innerText = formatRupee(data.new_bid);
                 bidInput.min = data.new_bid + 1;
+                bidInput.value = '';
+                
+                // Fetch latest history immediately
+                pollForUpdates();
               } else {
                 showStatus(data.error || 'Failed to place bid', 'error');
               }
