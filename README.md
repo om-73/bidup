@@ -48,5 +48,5 @@ This application uses **Redis** for persistence. Redis was chosen for its high p
 - `GET /p/:id`: View paste content as HTML.
 
 ## Deployed URL
-[Live on Vercel](https://bidup-rosy.vercel.app) (Placeholder - Replace after deployment)
+[Live on Vercel](https://bidup-rosy.vercel.app) (https://bidup-rosy.vercel.app)
 # pastebin
